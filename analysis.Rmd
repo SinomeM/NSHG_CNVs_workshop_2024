@@ -1,0 +1,39 @@
+---
+title: "Workshop Genome Wide CNVs in the UKB"
+author: "Simone Montalbano"
+output:
+  html_document:
+    toc: true
+    theme: cerulea
+---
+
+```{r setup, include = F}
+knitr::opts_chunk$set(warning = FALSE, echo = TRUE, eval = TRUE,
+                      include = TRUE, results = "markup", cache = T)
+```
+
+```{r remove cache, eval = F, include = F}
+# not eval, run manually to remove the cached files
+unlink('./analysis_cache', recursive = TRUE)
+unlink('./analysis_files', recursive = TRUE)
+```
+
+
+# Data and libraries
+
+Load necessary libraries and CNValidatron package.
+
+```{r libs, cache = F}
+library(data.table)
+library(ggplot2)
+setwd('../CNValidatron_fl')
+devtools::load_all()
+setwd('../NSHG_CNVs_workshop_2024')
+```
+
+Load CNVs data.table.
+
+```{r}
+cnvs <- fread('cnvs.tsv')
+```
+
