@@ -13,7 +13,34 @@ packages from the provided YAML file. Otherwise the requirements are as follows:
 - R vesrion 4.0 or above
 - data.table
 - biomaRt
+- ggplot2
+- CNValidatron (https://github.com/SinomeM/CNValidatron_fl)
 - [...]
 
+Other software, useful but not required for the analysis:
+
+- IGV (https://igv.org/)
+
 If you plan on running the code yourself before or after the workshop, please
-note that it requires an Unix system, or some small modification to paths etc.
+note that these instructions requires a Linux system, or some small modification to paths etc.
+
+**NB**: This lesson assumes basic knowledge of the Linux command line, GNU coreutils, and R.
+
+# How to run
+
+Clone the required repositories:
+
+```
+# update the path to an actual folder
+cd /some/dir/of/your/choice/
+# clone this repo
+git clone https://github.com/SinomeM/NSHG_CNVs_workshop_2024.git
+# clone CNValidatron repo
+git clone https://github.com/SinomeM/CNValidatron_fl.git
+```
+
+Optional, install the required software using conda:
+
+```
+conda env create -f 
+```
