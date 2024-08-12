@@ -24,7 +24,7 @@ Other software, useful but not required for the analysis:
 If you plan on running the code yourself before or after the workshop, please
 note that these instructions requires a Linux system, or some small modification to paths etc.
 
-**NB**: This lesson assumes basic knowledge of the Linux command line, GNU coreutils, and R.
+**NB**: This lesson assumes basic knowledge of the Linux command line, GNU coreutils, conda, and R.
 
 # How to run
 
@@ -37,10 +37,29 @@ cd /some/dir/of/your/choice/
 git clone https://github.com/SinomeM/NSHG_CNVs_workshop_2024.git
 # clone CNValidatron repo
 git clone https://github.com/SinomeM/CNValidatron_fl.git
+
+# move into the lesson repo
+cd NSHG_CNVs_workshop_2024
 ```
 
-Optional, install the required software using conda:
+Optional, install the required software using conda and activate the new environment:
 
 ```
-conda env create -f 
+# create new env based on the provided YAML
+conda env create -f conda_env_R4.yml
+# activate environment
+conda activate R4
+```
+
+Now you can run R. If you want to use Rstudio, you will need to install the conda package,
+or manage your software separately.
+
+```
+# open the RMD in a window and run the R console
+gedit analysis.Rmd &
+R
+
+# install rstudio
+conda install rstudio
+rstudio
 ```

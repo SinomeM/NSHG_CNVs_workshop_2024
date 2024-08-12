@@ -37,3 +37,31 @@ Load CNVs data.table.
 cnvs <- fread('cnvs.tsv')
 ```
 
+
+# Exploratory analysis
+
+```{r}
+
+```
+
+
+# CNVRs
+
+```{r}
+
+```
+
+
+# Access Ensembl using biomaRt
+
+```{r}
+
+```
+
+
+# Genomic enrichment analysis
+
+```{r}
+
+```
+
