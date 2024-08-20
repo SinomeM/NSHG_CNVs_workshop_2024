@@ -18,6 +18,12 @@ unlink('./analysis_cache', recursive = TRUE)
 unlink('./analysis_files', recursive = TRUE)
 ```
 
+```{r compile html, eval = F, include = F}
+# not eval, run manually to compile into an HTML
+rmarkdown::render("analysis.Rmd")
+```
+
+
 
 # Data and libraries
 
@@ -78,8 +84,10 @@ cnvs[, centre := round(start + length/2)]
 
 # Length is easier to visualize in Mbp
 ggplot(cnvs) + geom_density(aes(x = length/1000000)) + theme_bw()
+ggplot(cnvs) + geom_histogram(aes(x = length/1000000)) + theme_bw()
 
 ggplot(cnvs) + geom_density(aes(x = numsnp)) + theme_bw()
+ggplot(cnvs) + geom_histogram(aes(x = numsnp)) + theme_bw()
 ```
 
 Both distributions have a very long tail that compress most
@@ -93,6 +101,7 @@ ggplot(cnvs[length <= 2500000]) +
 
 # take the log
 ggplot(cnvs) + geom_density(aes(x = log(length, 10))) + theme_bw()
+ggplot(cnvs) + geom_histogram(aes(x = log(length, 10))) + theme_bw()
 ```
 
 Log10 is better and we don't need to exclude any CNV.
@@ -137,24 +146,53 @@ in this specific simulation.
 ## Other?
 
 
+# How to analyse Genome Wide CNVs
 
-# CNVRs
+As you might have imagined from the IGV session, CNVs can be a tricky class
+of variants to analyse. Their size spans from tens kilobases to few megabases
+and their boundaries can vary a lot even among "similar" CNVs.
+
+There are two main approaches to solve this problem. Use some kind of bins of
+the genome, such as regular windows or genes, or compute CNV regions (CNVRs).
+In this section we will cover both approaches.
+
+
+## Binning the genome
+
+
+```{r}
+
+```
+
+
+## CNVRs
+
 
 ```{r}
 
 ```
 
 
-# Access Ensembl using biomaRt
+# What about genes?
+
+In the genome wide context it's always interesting to consider genes.
+In this section we'll see how to access the ensembl database from R
+and how to use genes as bins.
+
+## Access Ensembl using biomaRt
 
 ```{r}
 
 ```
 
 
-# Genomic enrichment analysis
+## Genomic enrichment analysis
 
 ```{r}
 
 ```
 
+
+# What about phenotypes?
+
+## Lorem ipsum
