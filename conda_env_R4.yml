@@ -1,6 +1,5 @@
 name: R4
 channels:
-  - genomedk
   - conda-forge
   - bioconda
   - defaults
