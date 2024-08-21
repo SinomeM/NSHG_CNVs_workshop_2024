@@ -5,6 +5,8 @@ output:
   html_document:
     toc: true
     theme: cerulea
+editor_options: 
+  chunk_output_type: console
 ---
 
 ```{r setup, include = F}
@@ -24,17 +26,38 @@ rmarkdown::render("analysis.Rmd")
 ```
 
 
+```{r QCtreeCNV, eval = F, include = F}
+# install QCtreeCNV package from GitHub if needed
+devtools::install_github("sinomem/QCtreeCNV")
+```
+
 # Data and libraries
+
+## Libs
 
 Load necessary libraries and CNValidatron package.
 
 ```{r libs, cache = F}
 library(data.table)
 library(ggplot2)
+```
+
+```{r, eval = F}
+# load the package, it will require additional installations
 setwd('../CNValidatron_fl')
 devtools::load_all()
 setwd('../NSHG_CNVs_workshop_2024')
 ```
+
+```{r, eval = T}
+# alternatively, just load the functions we use
+# way less safe and far from optimal but should work
+list.files('../CNValidatron_fl/R')
+for (f in list.files('../CNValidatron_fl/R'))
+  source(paste0('../CNValidatron_fl/R/', f))
+```
+
+# CNV table
 
 Load CNVs data.table.
 
@@ -161,7 +184,7 @@ In this section we will cover both approaches.
 ## Binning the genome
 
 
-```{r bin cnvs}
+```{r bin cnvs, eval = F}
 dt <- binned_cnvs(cnvs, format = 'count', bins = CNValidatron:::binned_genome(bin_size = 250000))
 saveRDS(dt, 'binned_cnvs_250kbp.rds')
 dt <- binned_cnvs(cnvs, format = 'count', bins = CNValidatron:::binned_genome(bin_size = 100000))
