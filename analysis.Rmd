@@ -87,9 +87,9 @@ use this format to visualise a sample of our CNV table.
 # a minimal BED4 requires chr, start, end and ID. Tab as separator and
 # no header
 fwrite(cnvs[sample(1:.N, 10000), .(chr, start, end, GT)],
-       'cnvs_sample.bed', sep ='\t', col.names = F)
+       'bed_files/cnvs_sample.bed', sep ='\t', col.names = F)
 fwrite(cnvs[, .(chr, start, end, GT)],
-       'cnvs.bed', sep ='\t', col.names = F)
+       'bed_files/cnvs.bed', sep ='\t', col.names = F)
 ```
 
 
@@ -201,6 +201,19 @@ saveRDS(dt, 'cnvrs.rds')
 fwrite(dt[[1]], 'cnvs_with_cnvrs.txt', sep = '\t')
 fwrite(dt[[2]], 'cnvrs.txt', sep = '\t')
 ```
+
+
+```{r cnvrs BED, eval = F}
+cnvs_r <- fread('cnvs_with_cnvrs.txt')
+cnvrs <- fread('cnvrs.txt')
+
+fwrite(cnvs_r[, .(chr, start, end, CNVR)],
+       'bed_files/cnvs_with_cnvr.bed', sep ='\t', col.names = F)
+
+fwrite(cnvrs[, .(chr, start, end, CNVR)],
+       'bed_files/cnvrs.bed', sep ='\t', col.names = F)
+```
+
 
 
 # What about genes?
