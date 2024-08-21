@@ -176,8 +176,8 @@ saveRDS(dt, 'binned_cnvs_100kbp.rds')
 dt <- cnvrs_iou(cnvs, QCtreeCNV::hg19_chr_arms, min_iou = 0.50,
                 max_force_merge_rounds = 5, force_merge_min_overlap = 0.75)
 
-fwrite(dt[[1]], 'cnvrs/cnvs_with_cnvrs.txt', sep = '\t')
-fwrite(dt[[2]], 'cnvrs/cnvrs.txt', sep = '\t')
+fwrite(dt[[1]], 'cnvs_with_cnvrs.txt', sep = '\t')
+fwrite(dt[[2]], 'cnvrs.txt', sep = '\t')
 ```
 
 
