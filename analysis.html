@@ -357,7 +357,11 @@ display: none;
 <div id="TOC">
 <ul>
 <li><a href="#data-and-libraries" id="toc-data-and-libraries">Data and
-libraries</a></li>
+libraries</a>
+<ul>
+<li><a href="#libs" id="toc-libs">Libs</a></li>
+</ul></li>
+<li><a href="#cnv-table" id="toc-cnv-table">CNV table</a></li>
 <li><a href="#exploratory-analysis" id="toc-exploratory-analysis">Exploratory analysis</a>
 <ul>
 <li><a href="#cnv-table-format" id="toc-cnv-table-format">CNV table
@@ -396,13 +400,25 @@ about phenotypes?</a>
 
 <div id="data-and-libraries" class="section level1">
 <h1>Data and libraries</h1>
+<div id="libs" class="section level2">
+<h2>Libs</h2>
 <p>Load necessary libraries and CNValidatron package.</p>
 <pre class="r"><code>library(data.table)
-library(ggplot2)
+library(ggplot2)</code></pre>
+<pre class="r"><code># load the package, it will require additional installations
 setwd(&#39;../CNValidatron_fl&#39;)
 devtools::load_all()</code></pre>
 <pre><code>## ℹ Loading CNValidatron</code></pre>
 <pre class="r"><code>setwd(&#39;../NSHG_CNVs_workshop_2024&#39;)</code></pre>
+<pre class="r"><code># alternatively, just load the functions we use
+# way less safe and far from optimal but should work
+list.files(&#39;../CNValidatron_fl/R&#39;)
+for (f in list.files(&#39;../CNValidatron_fl/R&#39;))
+  source(paste0(&#39;../CNValidatron_fl/R/&#39;, f))</code></pre>
+</div>
+</div>
+<div id="cnv-table" class="section level1">
+<h1>CNV table</h1>
 <p>Load CNVs data.table.</p>
 <pre class="r"><code>cnvs &lt;- fread(&#39;cnvs.tsv&#39;)</code></pre>
 </div>
@@ -431,7 +447,9 @@ visualise a sample of our CNV table.</p>
 <pre class="r"><code># a minimal BED4 requires chr, start, end and ID. Tab as separator and
 # no header
 fwrite(cnvs[sample(1:.N, 10000), .(chr, start, end, GT)],
-       &#39;cnvs_sample.bed&#39;, sep =&#39;\t&#39;, col.names = F)</code></pre>
+       &#39;cnvs_sample.bed&#39;, sep =&#39;\t&#39;, col.names = F)
+fwrite(cnvs[, .(chr, start, end, GT)],
+       &#39;cnvs.bed&#39;, sep =&#39;\t&#39;, col.names = F)</code></pre>
 </div>
 <div id="length-and-number-of-snps" class="section level2">
 <h2>Length and number of SNPs</h2>
@@ -511,9 +529,19 @@ bins of the genome, such as regular windows or genes, or compute CNV
 regions (CNVRs). In this section we will cover both approaches.</p>
 <div id="binning-the-genome" class="section level2">
 <h2>Binning the genome</h2>
+<pre class="r"><code>dt &lt;- binned_cnvs(cnvs, format = &#39;count&#39;, bins = CNValidatron:::binned_genome(bin_size = 250000))
+saveRDS(dt, &#39;binned_cnvs_250kbp.rds&#39;)
+dt &lt;- binned_cnvs(cnvs, format = &#39;count&#39;, bins = CNValidatron:::binned_genome(bin_size = 100000))
+saveRDS(dt, &#39;binned_cnvs_100kbp.rds&#39;)</code></pre>
 </div>
 <div id="cnvrs" class="section level2">
 <h2>CNVRs</h2>
+<pre class="r"><code>dt &lt;- cnvrs_iou(cnvs, QCtreeCNV::hg19_chr_arms, min_iou = 0.50,
+                max_force_merge_rounds = 5, force_merge_min_overlap = 0.75)
+
+saveRDS(dt, &#39;cnvrs.rds&#39;)
+fwrite(dt[[1]], &#39;cnvs_with_cnvrs.txt&#39;, sep = &#39;\t&#39;)
+fwrite(dt[[2]], &#39;cnvrs.txt&#39;, sep = &#39;\t&#39;)</code></pre>
 </div>
 </div>
 <div id="what-about-genes" class="section level1">
