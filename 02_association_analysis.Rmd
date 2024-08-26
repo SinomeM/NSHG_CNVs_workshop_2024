@@ -125,7 +125,7 @@ fwrite(dt[[2]], 'cnvrs.txt', sep = '\t')
 ```{r cnvrs BED, eval = F}
 cnvs_r <- fread('cnvs_with_cnvrs.txt')
 cnvrs <- fread('cnvrs.txt')
-cnvrs[, name := paste0(CNVR, '_', n)]
+cnvrs[, name := paste0(CNVR, '_N', n)]
 
 fwrite(cnvs_r[, .(chr, start, end, CNVR)],
        'bed_files/cnvs_with_cnvr.bed', sep ='\t', col.names = F)
