@@ -1,0 +1,219 @@
+---
+title: "Workshop Genome Wide CNVs in the UKB"
+author: "Simone Montalbano"
+output:
+  html_document:
+    toc: true
+    theme: cerulea
+---
+
+```{r setup, include = F}
+knitr::opts_chunk$set(warning = FALSE, echo = TRUE, eval = TRUE,
+                      include = TRUE, results = "markup", cache = T)
+```
+
+```{r remove cache, eval = F, include = F}
+# not eval, run manually to remove the cached files
+unlink('./analysis_cache', recursive = TRUE)
+unlink('./analysis_files', recursive = TRUE)
+```
+
+```{r compile html, eval = F, include = F}
+# not eval, run manually to compile into an HTML
+rmarkdown::render("analysis.Rmd")
+```
+
+
+```{r QCtreeCNV, eval = F, include = F}
+# install QCtreeCNV package from GitHub if needed
+devtools::install_github("sinomem/QCtreeCNV")
+```
+
+# Data and libraries
+
+## Libs
+
+Load necessary libraries and CNValidatron package.
+
+```{r libs, cache = F}
+library(data.table)
+library(ggplot2)
+```
+
+```{r, eval = F}
+# load the package, it will require additional installations
+setwd('../CNValidatron_fl')
+devtools::load_all()
+setwd('../NSHG_CNVs_workshop_2024')
+```
+
+```{r, eval = F}
+# alternatively, just load the functions we use
+# way less safe and far from optimal but should work
+list.files('../CNValidatron_fl/R')
+for (f in list.files('../CNValidatron_fl/R'))
+  source(paste0('../CNValidatron_fl/R/', f))
+```
+
+
+## CNV table
+
+Load simulated CNVs data.table.
+
+```{r load CNVs}
+cnvs <- fread('cnvs.tsv')
+```
+
+
+## Phenotypes
+
+Load simulated phenotype file.
+
+```{r load pheno}
+pheno <- fread('pheno.txt')
+```
+
+
+
+# How to analyse Genome Wide CNVs
+
+As you might have imagined from the IGV session, CNVs can be a tricky class
+of variants to analyse. Their size spans from tens kilobases to few megabases
+and their boundaries can vary a lot even among "similar" CNVs.
+
+There are two main approaches to solve this problem. Use some kind of bins of
+the genome, such as regular windows or genes, or compute CNV regions (CNVRs).
+In this section we will cover both approaches.
+
+
+## Binning the genome
+
+
+```{r bin cnvs, eval = F}
+dt <- binned_cnvs(cnvs, format = 'count', bins = CNValidatron:::binned_genome(bin_size = 250000))
+saveRDS(dt, './dev/binned_cnvs_250kbp.rds')
+dt <- binned_cnvs(cnvs, format = 'count', bins = CNValidatron:::binned_genome(bin_size = 100000))
+saveRDS(dt, './dev/binned_cnvs_100kbp.rds')
+```
+
+
+```{r binned BED, eval = F}
+dt <- CNValidatron:::binned_genome(bin_size = 250000)[]
+dt[, end := end + 2]
+fwrite(dt[, .(chr, start, end, ix)], 'bed_files/bins_250.bed',
+       sep ='\t', col.names = F, scipen = 1000)
+
+dt <- CNValidatron:::binned_genome(bin_size = 100000)[]
+dt[, end := end + 2]
+fwrite(dt[, .(chr, start, end, ix)], 'bed_files/bins_100.bed',
+       sep ='\t', col.names = F, scipen = 1000)
+```
+
+
+## CNVRs
+
+
+```{r compute CNVRs, eval = F}
+dt <- cnvrs_iou(cnvs, QCtreeCNV::hg19_chr_arms, min_iou = 0.50,
+                max_force_merge_rounds = 5, force_merge_min_overlap = 0.75)
+
+saveRDS(dt, './dev/cnvrs.rds')
+fwrite(dt[[1]], 'cnvs_with_cnvrs.txt', sep = '\t')
+fwrite(dt[[2]], 'cnvrs.txt', sep = '\t')
+```
+
+
+```{r cnvrs BED, eval = F}
+cnvs_r <- fread('cnvs_with_cnvrs.txt')
+cnvrs <- fread('cnvrs.txt')
+cnvrs[, name := paste0(CNVR, '_N', n)]
+
+fwrite(cnvs_r[, .(chr, start, end, CNVR)],
+       'bed_files/cnvs_with_cnvr.bed', sep ='\t', col.names = F)
+
+fwrite(cnvrs[n >= 10, .(chr, start, end, name)],
+       'bed_files/cnvrs_min10_freq.bed', sep ='\t', col.names = F)
+```
+
+
+
+# What about genes?
+
+In the genome wide context it's always interesting to consider genes.
+In this section we'll see how to access the ensembl database from R
+and how to use genes as bins.
+
+## Access Ensembl using biomaRt
+
+```{r, eval = F}
+library(biomaRt)
+
+listEnsembl()
+
+listEnsemblArchives()
+
+searchDatasets(mart = useEnsembl(biomart = 'genes'), pattern = "hsapiens")
+
+# create mart
+ens_genes_hg19 <- useEnsembl(biomart = 'genes',
+                             dataset = 'hsapiens_gene_ensembl',
+                             version = 'GRCh37')
+listFilters(ens_genes_hg19)[1:50, ]
+listAttributes(ens_genes_hg19)[1:50, ]
+as.data.table(listAttributes(ens_genes_hg19))[grep('GENCODE', description), ]
+as.data.table(listAttributes(ens_genes_hg19))[grep('symbol', description), ]
+
+# select attributes
+attr <- c('ensembl_gene_id', 'hgnc_symbol', 'ensembl_transcript_id', 'chromosome_name',
+          'start_position', 'end_position', 'gene_biotype', 'transcript_biotype', 'uniprotswissprot')
+
+# query the database
+genes <- getBM(attributes = attr,
+               filters = 'chromosome_name', values = 1:22,
+               mart = ens_genes_hg19)
+
+# save results
+genes <- as.data.table(genes)
+fwrite(genes, 'hg19_genes.tsv', sep = '\t')
+```
+
+
+## Filtering genes on biotype
+
+```{r}
+
+```
+
+
+## Use genes as bins
+
+```{r, eval = F}
+genes <- fread('hg19_genes.tsv')
+
+genes[, name := hgnc_symbol]
+genes[name == '', name := ensembl_gene_id]
+setnames(genes, c('chromosome_name', 'start_position', 'end_position'),
+         c('chr', 'start', 'end'))
+bin_genes <- unique(genes[, .(name, chr, start, end)])
+setnames(bin_genes, 'name', 'ix')
+
+dt <- binned_cnvs(cnvs, format = 'count', bins = bin_genes)
+```
+
+
+
+
+# The actual association analysis
+
+```{r}
+
+```
+
+
+# Other Ideas / Analysis
+
+## Genomic enrichment analysis
+
+```{r}
+
+```

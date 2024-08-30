@@ -1,24 +1,24 @@
 library(data.table)
 
 setwd('~/Documents/NSHG_CNVs_workshop_2024')
-setwd('../CNValidatron_fl')
-devtools::load_all()
-setwd('../NSHG_CNVs_workshop_2024')
+# setwd('../CNValidatron_fl')
+# devtools::load_all()
+# setwd('../NSHG_CNVs_workshop_2024')
 
-cnvs <- fread('cnvs.tsv')
+cnvs <- fread('./02_live_session/cnvs.tsv')
 
-cnvs_r <- fread('cnvs_with_cnvrs.txt')
-cnvrs <- fread('cnvrs.txt')
+cnvs_r <- fread('./02_live_session/cnvs_with_cnvrs.txt')
+cnvrs <- fread('./02_live_session/cnvrs.txt')
 cnvrs[, name := paste0(CNVR, '_N', n)]
 
 fwrite(cnvs_r[, .(chr, start, end, CNVR)],
-       'bed_files/cnvs_with_cnvr.bed', sep ='\t', col.names = F)
+       '03_bed_files/cnvs_with_cnvr.bed', sep ='\t', col.names = F)
 
 fwrite(cnvrs[n >= 10, .(chr, start, end, name)],
-       'bed_files/cnvrs_min10_freq.bed', sep ='\t', col.names = F)
+       '03_bed_files/cnvrs_min10_freq.bed', sep ='\t', col.names = F)
 
 fwrite(cnvrs[n >= 100, .(chr, start, end, name)],
-       'bed_files/cnvrs_min100_freq.bed', sep ='\t', col.names = F)
+       '03_bed_files/cnvrs_min100_freq.bed', sep ='\t', col.names = F)
 
 samples <- unique(cnvs[, .(sample_ID)])
 samples[, gender := sample(1:2, .N, replace = T)]
@@ -79,9 +79,6 @@ samples[sample_ID %in% cnvs_r[CNVR == '13q_3_127', sample_ID], cnv3 := 1][is.na(
 samples[sample_ID %in% cnvs[GT == 1 & chr == 8 & start <= 3900001 &
                             end >= 4000001, sample_ID], cnv4 := 1][is.na(cnv4), cnv4 := 0]
 
-
-samples$case <- as.numeric(lapply(samples$cnv1, FUN = simulateCarriers, prev = 0.01, risk = 7))
-
 prev <- 0.01
 for (i in 1:nrow(samples)) {
   a <- samples[i]
@@ -94,3 +91,5 @@ for (i in 1:nrow(samples)) {
 }
 
 fwrite(samples, './dev/pheno.txt')
+fwrite(samples[, .(sample_ID, gender, case)], './01_homework/pheno.txt')
+fwrite(samples[, .(sample_ID, gender, case)], './02_live_session/pheno.txt')
