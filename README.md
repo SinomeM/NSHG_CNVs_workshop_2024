@@ -18,7 +18,6 @@ The folowwing R pakages:
 - data.table
 - ggplot2
 - rmarkdown
-- biomaRt
 
 We will skip the longer and most computation intensive step or run only on a subset.
 
@@ -26,6 +25,7 @@ To run the full analysis you will also need these additional packages and softwa
 
 - CNValidatron (https://github.com/SinomeM/CNValidatron_fl) and it's dependencies
 - QCtreeCNV (https://github.com/SinomeM/QCtreeCNV) and it's dependencies
+- biomaRt (https://bioconductor.org/packages/release/bioc/html/biomaRt.html)
 - tabix
 
 
