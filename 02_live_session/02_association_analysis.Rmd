@@ -14,13 +14,13 @@ knitr::opts_chunk$set(warning = FALSE, echo = TRUE, eval = TRUE,
 
 ```{r remove cache, eval = F, include = F}
 # not eval, run manually to remove the cached files
-unlink('./analysis_cache', recursive = TRUE)
-unlink('./analysis_files', recursive = TRUE)
+unlink('./02_association_analysis_cache', recursive = TRUE)
+unlink('./02_association_analysis_files', recursive = TRUE)
 ```
 
 ```{r compile html, eval = F, include = F}
 # not eval, run manually to compile into an HTML
-rmarkdown::render("analysis.Rmd")
+rmarkdown::render("02_association_analysis.Rmd")
 ```
 
 
@@ -42,9 +42,9 @@ library(ggplot2)
 
 ```{r, eval = F}
 # load the package, it will require additional installations
-setwd('../CNValidatron_fl')
+setwd('../../CNValidatron_fl')
 devtools::load_all()
-setwd('../NSHG_CNVs_workshop_2024')
+setwd('../NSHG_CNVs_workshop_2024/02_live_session')
 ```
 
 ```{r, eval = F}
@@ -91,9 +91,9 @@ In this section we will cover both approaches.
 
 ```{r bin cnvs, eval = F}
 dt <- binned_cnvs(cnvs, format = 'count', bins = CNValidatron:::binned_genome(bin_size = 250000))
-saveRDS(dt, './dev/binned_cnvs_250kbp.rds')
+saveRDS(dt, '../dev/binned_cnvs_250kbp.rds')
 dt <- binned_cnvs(cnvs, format = 'count', bins = CNValidatron:::binned_genome(bin_size = 100000))
-saveRDS(dt, './dev/binned_cnvs_100kbp.rds')
+saveRDS(dt, '../dev/binned_cnvs_100kbp.rds')
 ```
 
 
@@ -117,7 +117,7 @@ fwrite(dt[, .(chr, start, end, ix)], 'bed_files/bins_100.bed',
 dt <- cnvrs_iou(cnvs, QCtreeCNV::hg19_chr_arms, min_iou = 0.50,
                 max_force_merge_rounds = 5, force_merge_min_overlap = 0.75)
 
-saveRDS(dt, './dev/cnvrs.rds')
+saveRDS(dt, '../dev/cnvrs.rds')
 fwrite(dt[[1]], 'cnvs_with_cnvrs.txt', sep = '\t')
 fwrite(dt[[2]], 'cnvrs.txt', sep = '\t')
 ```
@@ -198,6 +198,8 @@ bin_genes <- unique(genes[, .(name, chr, start, end)])
 setnames(bin_genes, 'name', 'ix')
 
 dt <- binned_cnvs(cnvs, format = 'count', bins = bin_genes)
+dt
+saveRDS(dt, '../dev/binned_cnvs_all_genes.rds')
 ```
 
 

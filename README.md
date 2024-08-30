@@ -11,22 +11,27 @@ If you use conda or miniconda, you can create an environment with all necessary
 packages from the provided YAML file. Otherwise the requirements are as follows:
 
 - R vesrion 4.0 or above
-- tabix
+- IGV (https://igv.org/)
 
 The folowwing R pakages:
 
 - data.table
-- biomaRt
 - ggplot2
 - rmarkdown
-- CNValidatron (https://github.com/SinomeM/CNValidatron_fl)
+- biomaRt
 
-Other software, useful but not required for the analysis:
+We will skip the longer and most computation intensive step or run only on a subset.
 
-- IGV (https://igv.org/)
+To run the full analysis you will also need these additional packages and software:
+
+- CNValidatron (https://github.com/SinomeM/CNValidatron_fl) and it's dependencies
+- QCtreeCNV (https://github.com/SinomeM/QCtreeCNV) and it's dependencies
+- tabix
+
 
 If you plan on running the code yourself before or after the workshop, please
-note that these instructions requires a Linux system, or some small modification to paths etc.
+note that these instructions assume you are working on a Linux system, Mac **should**
+also work.
 
 **NB**: This lesson assumes basic knowledge of the Linux command line, GNU coreutils, conda, and R.
 
@@ -39,8 +44,6 @@ Clone the required repositories:
 cd /some/dir/of/your/choice/
 # clone this repo
 git clone https://github.com/SinomeM/NSHG_CNVs_workshop_2024.git
-# clone CNValidatron repo
-git clone https://github.com/SinomeM/CNValidatron_fl.git
 
 # move into the lesson repo
 cd NSHG_CNVs_workshop_2024
@@ -50,20 +53,16 @@ Optional, install the required software using conda and activate the new environ
 
 ```
 # create new env based on the provided YAML
-conda env create -f conda_env_R4.yml
+conda env create -f conda_env_rstudio.yml
 # activate environment
-conda activate R4
+conda activate rstudio
 ```
 
-Now you can run R. If you want to use Rstudio, you will need to install the conda package,
-or manage your software separately.
+# Homework
 
-```
-# open the RMD in a window and run the R console
-gedit analysis.Rmd &
-R
-
-# install rstudio
-conda install rstudio
-rstudio
-```
+In this repo there are two main folders `01_homework` and `02_live_session`.
+The idea is for you to try running the code in the homework folder and
+try to think how you would solve the assignment. Then, in the live session
+we will quickly go through the introduction together and move to how we would
+solve the issue. There we have a discussion about which analysis method is best depending
+on the goal etc.

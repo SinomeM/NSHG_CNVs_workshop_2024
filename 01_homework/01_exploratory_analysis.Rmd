@@ -157,10 +157,22 @@ in this specific simulation.
 Now that you have an idea on how CNVs looks like and how they are distributed in
 the genome you can think how you would analysise them.
 
-We have prepared an excersise for that. In this table you will find the 
+We have prepared an excersise for that. In this table you will find the samples list
+and one columns with the phenotype state, 1 for cases and 0 for controls.
+
+There are four loci in the genome associated with the phenotype, can you find them?
+
+Some hints / suggestions:
+
+- Treating each CNV as an exposure is unfeasible, what about grouping them?
+- Maybe set some windows across the genome?
+- What about genes?
 
 ```{r}
 pheno <- fread('pheno.txt')
 ```
 
+If your strategy works you will find a signal somewhere in chromosome
+5, 8, 13 and 21.
 
+Good luck! ;)
