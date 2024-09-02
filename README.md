@@ -58,6 +58,14 @@ conda env create -f conda_env_rstudio.yml
 conda activate rstudio
 ```
 
+You can compile the whole script with rstudio or
+`rmarkdown::render("01_exploratory_analysis.Rmd")` and then check out the resulting
+HTML.
+Alternatively, you can manually execute the R code chunks one after the other.
+
+**NB** : Some chunck are marked as "# NOT RUN", these are **not** meant to be manually
+executed. Some are rmardown settings, other are oprional steps.
+
 # Homework
 
 In this repo there are two main folders `01_homework` and `02_live_session`.

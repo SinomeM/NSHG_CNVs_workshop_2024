@@ -8,23 +8,31 @@ output:
 ---
 
 ```{r setup, include = F}
+# NOT RUN
+
 knitr::opts_chunk$set(warning = FALSE, echo = TRUE, eval = TRUE,
                       include = TRUE, results = "markup", cache = T)
 ```
 
 ```{r remove cache, eval = F, include = F}
+# NOT RUN
+
 # not eval, run manually to remove the cached files
 unlink('./02_association_analysis_cache', recursive = TRUE)
 unlink('./02_association_analysis_files', recursive = TRUE)
 ```
 
 ```{r compile html, eval = F, include = F}
+# NOT RUN
+
 # not eval, run manually to compile into an HTML
 rmarkdown::render("02_association_analysis.Rmd")
 ```
 
 
 ```{r QCtreeCNV, eval = F, include = F}
+# NOT RUN
+
 # install QCtreeCNV package from GitHub if needed
 devtools::install_github("sinomem/QCtreeCNV")
 ```
@@ -38,16 +46,18 @@ Load necessary libraries and CNValidatron package.
 ```{r libs, cache = F}
 library(data.table)
 library(ggplot2)
+
+setwd('~/Documents/NSHG_CNVs_workshop_2024/02_live_session//')
 ```
 
 ```{r, eval = F}
+# NOT RUN
+
 # load the package, it will require additional installations
 setwd('../../CNValidatron_fl')
 devtools::load_all()
 setwd('../NSHG_CNVs_workshop_2024/02_live_session')
-```
 
-```{r, eval = F}
 # alternatively, just load the functions we use
 # way less safe and far from optimal but should work
 list.files('../CNValidatron_fl/R')
@@ -88,16 +98,31 @@ In this section we will cover both approaches.
 
 ## Binning the genome
 
+This function can be used to count CNVs in a arbitrary set of bins across the genome.
+These can be regular windows, as in this example, or any other set of segments.
 
 ```{r bin cnvs, eval = F}
+# NOT RUN
+
 dt <- binned_cnvs(cnvs, format = 'count', bins = CNValidatron:::binned_genome(bin_size = 250000))
 saveRDS(dt, '../dev/binned_cnvs_250kbp.rds')
 dt <- binned_cnvs(cnvs, format = 'count', bins = CNValidatron:::binned_genome(bin_size = 100000))
 saveRDS(dt, '../dev/binned_cnvs_100kbp.rds')
 ```
 
+Load pre-computed object.
+
+```{r}
+bins250kb <- loadRDS( '../dev/binned_cnvs_250kbp.rds')
+bins100kb <- loadRDS( '../dev/binned_cnvs_100kbp.rds')
+```
+
+Create BED files of the bins to check visually how they compare with CNVs, CNVRs
+etc in IGV.
 
 ```{r binned BED, eval = F}
+# NOT RUN
+
 dt <- CNValidatron:::binned_genome(bin_size = 250000)[]
 dt[, end := end + 2]
 fwrite(dt[, .(chr, start, end, ix)], 'bed_files/bins_250.bed',
@@ -112,8 +137,16 @@ fwrite(dt[, .(chr, start, end, ix)], 'bed_files/bins_100.bed',
 
 ## CNVRs
 
+A CNV region (CNVR), can be defined as a set of CNV with high internal similarity,
+that is similar boundaries (start and stop) and length, in other terms, high IOU
+(intersection over the union).
+
+This function computes CNVRs using a networks based approach and the the community 
+detection algorithm Leiden. It can be very memory hungry, so it been pre run.
 
 ```{r compute CNVRs, eval = F}
+# NOT RUN
+
 dt <- cnvrs_iou(cnvs, QCtreeCNV::hg19_chr_arms, min_iou = 0.50,
                 max_force_merge_rounds = 5, force_merge_min_overlap = 0.75)
 
@@ -122,8 +155,18 @@ fwrite(dt[[1]], 'cnvs_with_cnvrs.txt', sep = '\t')
 fwrite(dt[[2]], 'cnvrs.txt', sep = '\t')
 ```
 
+Load pre-run objects.
+
+```{r}
+cnvs_r <- fread('cnvs_with_cnvrs.txt')
+cnvrs <- fread('cnvrs.txt')
+```
+
+Create BED files for IGV.
 
 ```{r cnvrs BED, eval = F}
+# NOT RUN
+
 cnvs_r <- fread('cnvs_with_cnvrs.txt')
 cnvrs <- fread('cnvrs.txt')
 cnvrs[, name := paste0(CNVR, '_N', n)]
@@ -146,6 +189,8 @@ and how to use genes as bins.
 ## Access Ensembl using biomaRt
 
 ```{r, eval = F}
+# NOT RUN
+
 library(biomaRt)
 
 listEnsembl()
@@ -177,17 +222,26 @@ genes <- as.data.table(genes)
 fwrite(genes, 'hg19_genes.tsv', sep = '\t')
 ```
 
+Load pre-run object.
+
+```{r}
+genes <- fread('hg19_genes.tsv')
+```
+
+
 
 ## Filtering genes on biotype
 
 ```{r}
-
+genes[, .N, by = ]
 ```
 
 
 ## Use genes as bins
 
 ```{r, eval = F}
+# NOT RUN
+
 genes <- fread('hg19_genes.tsv')
 
 genes[, name := hgnc_symbol]
@@ -202,6 +256,11 @@ dt
 saveRDS(dt, '../dev/binned_cnvs_all_genes.rds')
 ```
 
+Load pre-run object.
+
+```{r}
+bins_genes <- readRDS('../dev/binned_cnvs_all_genes.rds')
+```
 
 
 

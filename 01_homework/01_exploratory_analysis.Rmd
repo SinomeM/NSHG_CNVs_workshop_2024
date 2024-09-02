@@ -8,23 +8,31 @@ output:
 ---
 
 ```{r setup, include = F}
+# NOT RUN
+
 knitr::opts_chunk$set(warning = FALSE, echo = TRUE, eval = TRUE,
                       include = TRUE, results = "markup", cache = T)
 ```
 
 ```{r remove cache, eval = F, include = F}
+# NOT RUN 
+
 # not eval, run manually to remove the cached files
 unlink('./analysis_cache', recursive = TRUE)
 unlink('./analysis_files', recursive = TRUE)
 ```
 
 ```{r compile html, eval = F, include = F}
+# NOT RUN
+
 # not eval, run manually to compile into an HTML
 rmarkdown::render("analysis.Rmd")
 ```
 
 
 ```{r QCtreeCNV, eval = F, include = F}
+# NOT RUN
+
 # install QCtreeCNV package from GitHub if needed
 devtools::install_github("sinomem/QCtreeCNV")
 ```
@@ -33,11 +41,14 @@ devtools::install_github("sinomem/QCtreeCNV")
 
 ## Libs
 
-Load necessary libraries and CNValidatron package.
+Load necessary libraries.
 
 ```{r libs, cache = F}
 library(data.table)
 library(ggplot2)
+
+# change this to the actual path on your system
+setwd('~/Documents/NSHG_CNVs_workshop_2024/01_homework/')
 ```
 
 
@@ -64,8 +75,8 @@ cnvs[1:5]
 
 ## Visualise CNVs, export BED file for IGV
 
-IGV is probably the best tool to visualise CNVs. It can get complex with
-high number, but we'll show ways to simplify that.
+IGV is probably the best tool to visualise CNVs. The view can get complex with
+high numbers, but we'll show ways to simplify that.
 The most basic file format compatible with IGV is the BED4. We can
 use this format to visualise a sample of our CNV table.
 
@@ -73,9 +84,9 @@ use this format to visualise a sample of our CNV table.
 # a minimal BED4 requires chr, start, end and ID. Tab as separator and
 # no header
 fwrite(cnvs[sample(1:.N, 10000), .(chr, start, end, GT)],
-       'bed_files/cnvs_sample.bed', sep ='\t', col.names = F)
+       '../bed_files/cnvs_sample.bed', sep ='\t', col.names = F)
 fwrite(cnvs[, .(chr, start, end, GT)],
-       'bed_files/cnvs.bed', sep ='\t', col.names = F)
+       '../bed_files/cnvs.bed', sep ='\t', col.names = F)
 ```
 
 
@@ -155,7 +166,7 @@ in this specific simulation.
 # Homework
 
 Now that you have an idea on how CNVs looks like and how they are distributed in
-the genome you can think how you would analysise them.
+the genome you can think how you would analyse them.
 
 We have prepared an excersise for that. In this table you will find the samples list
 and one columns with the phenotype state, 1 for cases and 0 for controls.
@@ -164,7 +175,7 @@ There are four loci in the genome associated with the phenotype, can you find th
 
 Some hints / suggestions:
 
-- Treating each CNV as an exposure is unfeasible, what about grouping them?
+- Treating each CNV as an exposure is infeasible, what about grouping them?
 - Maybe set some windows across the genome?
 - What about genes?
 
