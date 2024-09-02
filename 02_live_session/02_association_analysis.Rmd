@@ -88,7 +88,6 @@ pheno <- fread('pheno.txt')
 ```
 
 
-
 # How to analyse Genome Wide CNVs
 
 As you might have imagined from the IGV session, CNVs can be a tricky class
@@ -113,17 +112,20 @@ These can be regular windows, as in this example, or any other set of segments.
 ```{r bin cnvs, eval = F}
 # NOT RUN
 
-dt <- binned_cnvs(cnvs, format = 'count', bins = CNValidatron:::binned_genome(bin_size = 250000))
+source('~/Documents/CNValidatron_fl/R/binned_cnvs.R')
+dt <- binned_cnvs(cnvs, format = 'count',
+                  bins = CNValidatron:::binned_genome(bin_size = 250000))
 saveRDS(dt, '../dev/binned_cnvs_250kbp.rds')
-dt <- binned_cnvs(cnvs, format = 'count', bins = CNValidatron:::binned_genome(bin_size = 100000))
+dt <- binned_cnvs(cnvs, format = 'count',
+                  bins = CNValidatron:::binned_genome(bin_size = 100000))
 saveRDS(dt, '../dev/binned_cnvs_100kbp.rds')
 ```
 
 Load pre-computed object.
 
 ```{r}
-bins250kb <- loadRDS( '../dev/binned_cnvs_250kbp.rds')
-bins100kb <- loadRDS( '../dev/binned_cnvs_100kbp.rds')
+bins250kb <- readRDS( '../dev/binned_cnvs_250kbp.rds')
+bins100kb <- readRDS( '../dev/binned_cnvs_100kbp.rds')
 ```
 
 Create BED files of the bins to check visually how they compare with CNVs, CNVRs
@@ -176,8 +178,6 @@ Create BED files for IGV.
 ```{r cnvrs BED, eval = F}
 # NOT RUN
 
-cnvs_r <- fread('cnvs_with_cnvrs.txt')
-cnvrs <- fread('cnvrs.txt')
 cnvrs[, name := paste0(CNVR, '_N', n)]
 
 fwrite(cnvs_r[, .(chr, start, end, CNVR)],
@@ -221,7 +221,7 @@ as.data.table(listAttributes(ens_genes_hg19))[grep('symbol', description), ]
 attr <- c('ensembl_gene_id', 'hgnc_symbol', 'ensembl_transcript_id', 'chromosome_name',
           'start_position', 'end_position', 'gene_biotype', 'transcript_biotype', 'uniprotswissprot')
 
-# query the database
+# query the database using attributes and filters
 genes <- getBM(attributes = attr,
                filters = 'chromosome_name', values = 1:22,
                mart = ens_genes_hg19)
@@ -242,7 +242,19 @@ genes <- fread('hg19_genes.tsv')
 ## Filtering genes on biotype
 
 ```{r}
-genes[, .N, by = ]
+dt <- unique(genes[, .(ensembl_gene_id, gene_biotype)])[, .N, by = gene_biotype]
+setorder(dt, -N)
+dt[]
+dt <- genes[, .N, by = transcript_biotype]
+setorder(dt, -N)
+dt[]
+
+genes_pc <- 
+  unique(genes[gene_biotype == 'protein_coding',
+                 .(ensembl_gene_id, gene_biotype, chromosome_name,
+                   start_position, end_position, gene_biotype)])
+
+fwrite(genes_pc, 'hg19_genes_pc.tsv', sep = '\t')
 ```
 
 
@@ -251,6 +263,7 @@ genes[, .N, by = ]
 ```{r, eval = F}
 # NOT RUN
 
+# all genes
 genes <- fread('hg19_genes.tsv')
 
 genes[, name := hgnc_symbol]
@@ -272,10 +285,16 @@ bins_genes <- readRDS('../dev/binned_cnvs_all_genes.rds')
 ```
 
 
-
 # The actual association analysis
 
+Now that we have multiple ways of grouping CNVs we can try to run an association
+analysis. We have simulated a phenotype with four risk loci, let's see if we can
+find them all.
+
+
 ## Load all necessary objects
+
+Load all pre-run objects we'll need
 
 ```{r}
 # read phenotype table

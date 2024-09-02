@@ -1,6 +1,5 @@
 name: rstudio
 channels:
-  - genomedk
   - conda-forge
   - bioconda
   - defaults
