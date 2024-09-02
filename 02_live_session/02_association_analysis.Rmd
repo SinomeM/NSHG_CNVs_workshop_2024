@@ -1,6 +1,6 @@
 ---
 title: "Workshop Genome Wide CNVs in the UKB"
-author: "Simone Montalbano"
+author: "Simone Montalbano & Andrés Ingason"
 output:
   html_document:
     toc: true
@@ -56,9 +56,10 @@ You will need:
 
 In general, all required files as well as a complete PennCNV pipeline, are
 described in our protocol at: 
-https://currentprotocols.onlinelibrary.wiley.com/doi/10.1002/cpz1.621 .
+https://currentprotocols.onlinelibrary.wiley.com/doi/10.1002/cpz1.621.
+
 The protocol focuses on recurrent CNV loci, however you can just follow the
-pipeline and skip all step related to recurrent loci to have all necessary files
+pipeline and skip all steps related to recurrent loci to have all necessary files
 for CNValidatron.
 
 ```{r, eval = F}
@@ -722,7 +723,7 @@ subset(geneGWbins,FEpFDR<0.05)
 subset(geneRes, FEp<0.05)
 ```
 
-Similar results than with CNVRs, not really anything new from the fine mapping
+Similar results than with CNVRs, not really anything new from the fine mapping.
 
 
 ## Why separate deletions and duplications?
@@ -822,10 +823,4 @@ Does it make sense to analyse them together? Ideas? Comments?
 ```
 
 
-# Other Ideas / Analysis
-
-## Genomic enrichment analysis
-
-```{r}
-
-```
+# Conclusions
