@@ -63,8 +63,8 @@ You can compile the whole script with rstudio or
 HTML.
 Alternatively, you can manually execute the R code chunks one after the other.
 
-**NB** : Some chunck are marked as "# NOT RUN", these are **not** meant to be manually
-executed. Some are rmardown settings, other are oprional steps.
+**NB** : Some chunks are marked as "# NOT RUN", these are **not** meant to be manually
+executed. Some are rmarkdown settings, other are optional steps.
 
 # Homework
 

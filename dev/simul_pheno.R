@@ -11,42 +11,43 @@ cnvs_r <- fread('./02_live_session/cnvs_with_cnvrs.txt')
 cnvrs <- fread('./02_live_session/cnvrs.txt')
 cnvrs[, name := paste0(CNVR, '_N', n)]
 
-fwrite(cnvs_r[, .(chr, start, end, CNVR)],
-       '03_bed_files/cnvs_with_cnvr.bed', sep ='\t', col.names = F)
-
-fwrite(cnvrs[n >= 10, .(chr, start, end, name)],
-       '03_bed_files/cnvrs_min10_freq.bed', sep ='\t', col.names = F)
-
-fwrite(cnvrs[n >= 100, .(chr, start, end, name)],
-       '03_bed_files/cnvrs_min100_freq.bed', sep ='\t', col.names = F)
-
-samples <- unique(cnvs[, .(sample_ID)])
-samples[, gender := sample(1:2, .N, replace = T)]
-samples
-
-# from Andres
-
-# simulate carriers function (remember to force output as.numeric)
-simulateCarriers = function(x, prev, risk) {
-  if (is.na(x)==T) {
-    NA
-  } else if (x==1) {
-    rbinom(1,1,prev*risk)
-  } else if (x==0) {
-    rbinom(1,1,prev)
-  }
+# BED filse for IGV
+if (F) {
+  fwrite(cnvs_r[, .(chr, start, end, CNVR)],
+         '03_bed_files/cnvs_with_cnvr.bed', sep ='\t', col.names = F)
+  
+  fwrite(cnvrs[n >= 10, .(chr, start, end, name)],
+         '03_bed_files/cnvrs_min10_freq.bed', sep ='\t', col.names = F)
+  
+  fwrite(cnvrs[n >= 100, .(chr, start, end, name)],
+         '03_bed_files/cnvrs_min100_freq.bed', sep ='\t', col.names = F)
 }
 
-# set tmp.prev & tmp.risk
-tmp.prev=0.01 # cnv is in 1% population frequency
-tmp.risk=5 # cnv is 5 times more frequent in cases
 
-# simulate case status
-data.surv$case=as.numeric(lapply(data.surv$cnv_tmp, FUN = simulateCarriers, prev = 0.01, risk = 5))
+# Example from Andres
+if (F) {
+  
+  # simulate carriers function (remember to force output as.numeric)
+  simulateCarriers = function(x, prev, risk) {
+    if (is.na(x)==T) {
+      NA
+    } else if (x==1) {
+      rbinom(1,1,prev*risk)
+    } else if (x==0) {
+      rbinom(1,1,prev)
+    }
+  }
+  
+  # set tmp.prev & tmp.risk
+  tmp.prev=0.01 # cnv is in 1% population frequency
+  tmp.risk=5 # cnv is 5 times more frequent in cases
+  
+  # simulate case status
+  data.surv$case=as.numeric(lapply(data.surv$cnv_tmp, FUN = simulateCarriers, prev = 0.01, risk = 5))
+}
 
 
-
-# Candidates
+# Candidates loci
 
 # name: ZSWIM6
 # location: chr5:60628085-60841999 (+)
@@ -65,6 +66,12 @@ cnvs[GT == 2 & chr == 8 & start <= 3900001 & end >= 4000001, .N]
 # location: chr13:47352113-47434319
 cnvs_r[CNVR == '13q_3_127', .N]
 
+
+# Simulation
+
+samples <- fread('../UKB_GW_CNVs/qc_filtered.txt')[, .(sample_ID)]
+samples[, gender := sample(1:2, .N, replace = T)]
+samples
 
 # CNV 1 and 2, (very) low prevalence, high risk
 samples[sample_ID %in% cnvs[GT == 2 & chr == 5 & start <= 60628085 &

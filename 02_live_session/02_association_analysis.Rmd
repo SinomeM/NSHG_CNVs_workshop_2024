@@ -47,11 +47,15 @@ Load necessary libraries and CNValidatron package.
 library(data.table)
 library(ggplot2)
 
+# change this to the actual path on your system
 setwd('~/Documents/NSHG_CNVs_workshop_2024/02_live_session//')
 ```
 
 ```{r, eval = F}
 # NOT RUN
+
+# for the purpose of this analyis we pre-run all steps that require this package
+# if you want to run it yourself you will need to install it.
 
 # load the package, it will require additional installations
 setwd('../../CNValidatron_fl')
@@ -90,6 +94,11 @@ pheno <- fread('pheno.txt')
 As you might have imagined from the IGV session, CNVs can be a tricky class
 of variants to analyse. Their size spans from tens kilobases to few megabases
 and their boundaries can vary a lot even among "similar" CNVs.
+
+Thoughts from the homework? How would you tackle this problem? Is it even a
+problem to begin with?
+
+
 
 There are two main approaches to solve this problem. Use some kind of bins of
 the genome, such as regular windows or genes, or compute CNV regions (CNVRs).
@@ -266,8 +275,431 @@ bins_genes <- readRDS('../dev/binned_cnvs_all_genes.rds')
 
 # The actual association analysis
 
-```{r}
+## Load all necessary objects
 
+```{r}
+# read phenotype table
+pheno <- fread('pheno.txt')
+
+# grouped CNVs, regular windows, genes and CNVRs
+bins250=readRDS("../dev/binned_cnvs_250kbp.rds")
+bins100=readRDS("../dev/binned_cnvs_100kbp.rds")
+binsgenes=readRDS("../dev/binned_cnvs_all_genes.rds")
+cnvrs=readRDS("../dev/cnvrs.rds")
+```
+
+## First scan
+
+We start by running a simple Fisher's exact (FE) test
+of association to identify potential risk loci across
+medium sized (250kb) bins of the autosomal genome.
+
+```{r}
+# create vectors of cases and controls
+cases=subset(pheno,case==1)$sample_ID
+ctrls=subset(pheno,case==0)$sample_ID
+
+# subset on minimum size of 5 carriers
+preBins=subset(bins250[[2]], N>=5)
+# add case status to carrier table
+preCars=merge(bins250[[1]], pheno, by="sample_ID", all.x=F, all.y=F)
+
+# define a function that returns the p-value from the FE test
+fe.pval = function(bin,gt) {
+  
+  tmp.bin=subset(tmpCars,ix==bin & GT==gt)
+  
+  if (nrow(tmp.bin>0)) {
+    caseCar=nrow(subset(tmp.bin, case==1))
+    ctrlCar=nrow(subset(tmp.bin, case==0))
+    caseNon=length(cases)-caseCar
+    ctrlNon=length(ctrls)-ctrlCar
+    fe.tmp=matrix(c(caseCar,caseNon,ctrlCar,ctrlNon),ncol=2)
+    signif(as.numeric(fisher.test(fe.tmp)$p.value),digits=2)
+  } else NA
+}
+ 
+# run function through all bins by chr (~40'')
+for (i in (1:22)) {
+    print(paste("running chr",i," of 22 ..",sep=""))
+    tmpBins=subset(preBins,chr==i)
+    tmpCars=subset(preCars,chr==i)
+    tmpBins$FEp=mapply(fe.pval, bin=tmpBins$ix, gt=tmpBins$GT)
+    tmpBins=subset(tmpBins,is.na(FEp)==F)
+    if (i==1) {
+        tmpGWbins=tmpBins
+    } else {
+        tmpGWbins=rbind(tmpGWbins,tmpBins)
+    }
+}
+
+# control the false discovery rate
+tmpGWbins$FEpFDR=p.adjust(tmpGWbins$FEp,method="fdr")
+
+# how many bins ?
+nrow(tmpGWbins)
+
+# was anything significant ?
+subset(tmpGWbins,FEpFDR<0.05)
+
+# store
+GWbins250=tmpGWbins
+```
+
+
+## Increase resolution
+
+Same approach but now using smaller (100kbp) bins. This might help to detect smaller
+CNVs and should give more fine-grained results.
+
+```{r}
+# subset on minimum size of 5 carriers
+preBins=subset(bins100[[2]], N>=5)
+# add case status to carrier table
+preCars=merge(bins100[[1]], pheno, by="sample_ID", all.x=F, all.y=F)
+
+# run function through all bins by chr (~2')
+for (i in (1:22)) {
+    print(paste("running chr",i," of 22 ..",sep=""))
+    tmpBins=subset(preBins,chr==i)
+    tmpCars=subset(preCars,chr==i)
+    tmpBins$FEp=mapply(fe.pval, bin=tmpBins$ix, gt=tmpBins$GT)
+    tmpBins=subset(tmpBins,is.na(FEp)==F)
+    if (i==1) {
+        tmpGWbins=tmpBins
+    } else {
+        tmpGWbins=rbind(tmpGWbins,tmpBins)
+    }
+}
+
+# control the false discovery rate
+tmpGWbins$FEpFDR=p.adjust(tmpGWbins$FEp,method="fdr")
+
+# how many bins ?
+nrow(tmpGWbins)
+
+# was anything significant ?
+subset(tmpGWbins,FEpFDR<0.05)
+
+# store together with previous results
+GWbins100=tmpGWbins
+GWbinsAll=rbind(GWbins250,GWbins100)
+```
+
+## Pause and ponder, take a look in IGV?
+
+Lorem Ipsum.
+
+
+## Can CNVRs help in this situation?
+
+```{r}
+## can we add clarity by looking at CNVRs in the associated locus
+
+# subset CNVRs to those spanning the locus (also for simplicity, restrict to deletions)
+tmpBins=subset(cnvrs[[2]], chr==13 & start<47500000 & end>47250000 & n>1)
+tmpCars=subset(cnvrs[[1]], chr==13 & start<47500000 & end>47250000 & GT==1)
+tmpBins=subset(tmpBins, CNVR %in% unique(tmpCars$CNVR))
+
+# add case status to carrier table
+tmpCars=merge(tmpCars, pheno, by="sample_ID")
+
+# estimate association across all CNVRs
+resHeader=c("CNVR","ChrPos","Ncase","Nctrl","FEor","FEp")
+cnvrRes=data.frame(matrix(rep("NA",nrow(tmpBins)*length(resHeader)),ncol=length(resHeader)))
+names(cnvrRes)=resHeader
+for (i in (1:nrow(tmpBins))) {
+  tmp.bin=subset(tmpCars,CNVR==tmpBins$CNVR[i])
+	caseCar=nrow(subset(tmp.bin, case==1))
+	ctrlCar=nrow(subset(tmp.bin, case==0))
+	caseNon=length(cases)-caseCar
+	ctrlNon=length(ctrls)-ctrlCar
+	fe.tmp=fisher.test(matrix(c(caseCar,caseNon,ctrlCar,ctrlNon),ncol=2))
+	cnvrRes$CNVR[i]=tmpBins$CNVR[i]
+	cnvrRes$ChrPos[i]=paste(tmpBins$chr[i],":",tmpBins$start[i],"-",tmpBins$end[i],sep="")
+	cnvrRes$Ncase[i]=caseCar
+	cnvrRes$Nctrl[i]=ctrlCar
+	cnvrRes$FEor[i]=round(as.numeric(fe.tmp$estimate),digits=2)
+	cnvrRes$FEp[i]=signif(as.numeric(fe.tmp$p.value),digits=2)
+}
+  # ensure that all included CNVRs have >1 carriers
+  cnvrRes$Ncase=as.numeric(cnvrRes$Ncase)
+  cnvrRes$Nctrl=as.numeric(cnvrRes$Nctrl)
+  cnvrRes=subset(cnvrRes,Ncase+Nctrl>1)
+  
+  # for recollection, how did the binned results look  
+  subset(GWbinsAll,FEpFDR<0.05)
+  
+  # .. and how do the CNVR results look
+  cnvrRes
+```
+
+### How do we interpret this? 
+
+Main takeaways:  
+
+1. one signal can be picked up by multiple bins
+2. overlapping or adjacent CNVRs may contribute to one association signal
+   (although not clear in this case)
+
+## What about genes?
+
+```{r}
+  ### IS THERE A WAY TO ADDRESS THE FUNCTIONAL EFFECT OF CNVs MORE DIRECTLY ?
+  # One way would be to group deletions by whether they overlap the same gene
+
+  # subset by-gene bins to those spanning the locus
+  tmpBins=subset(binsgenes[[2]], chr==13 & start<47500000 & end>47250000 & GT==1)
+  tmpCars=subset(binsgenes[[1]], chr==13 & start<47500000 & end>47250000 & GT==1)
+  
+  # add case status to carrier table
+  tmpCars=merge(tmpCars, pheno, by="sample_ID")
+
+  # estimate association across all genes (del-specific)
+  resHeader=c("Gene","ChrPos","Ncase","Nctrl","FEor","FEp")
+  geneRes=data.frame(matrix(rep("NA",nrow(tmpBins)*length(resHeader)),ncol=length(resHeader)))
+  names(geneRes)=resHeader
+  for (i in (1:nrow(tmpBins))) {
+      tmp.bin=subset(tmpCars,ix==tmpBins$ix[i])
+	  caseCar=nrow(subset(tmp.bin, case==1))
+	  ctrlCar=nrow(subset(tmp.bin, case==0))
+	  caseNon=length(cases)-caseCar
+	  ctrlNon=length(ctrls)-ctrlCar
+	  fe.tmp=fisher.test(matrix(c(caseCar,caseNon,ctrlCar,ctrlNon),ncol=2))
+	  geneRes$Gene[i]=tmpBins$ix[i]
+	  geneRes$ChrPos=paste(tmpBins$chr[i],":",tmpBins$start[i],"-",tmpBins$end[i],sep="")
+	  geneRes$Ncase[i]=caseCar
+	  geneRes$Nctrl[i]=ctrlCar
+	  geneRes$FEor[i]=round(as.numeric(fe.tmp$estimate),digits=2)
+	  geneRes$FEp[i]=signif(as.numeric(fe.tmp$p.value),digits=2)
+  }
+
+  # for recollection, how did the binned results look  
+  subset(GWbinsAll,FEpFDR<0.05)
+
+  # .. and the CNVR results 
+  cnvrRes
+  
+  # .. and then what about the gene results
+  geneRes
+
+  ### WHAT'S THE INTERPRETATION ?? 
+  # which gene is it, maybe both?
+  # what else could we do?
+```
+
+
+# Start over, use CNVRs directly
+
+Let's try to use CNVRs from the very firt scan to see if we detect some more signals.
+
+```{r}
+  ###### Should we try running the whole genome again, using CNVRs and genes instead of equally sized bins?
+  ###### (Is this more likely to reflect some biologic functionality, or not ? (something to reflect on))
+  
+  # We start with CNVRs (need to accommodate for non del/dup split of CNVRs)
+  preBins=subset(cnvrs[[2]], n>=5)
+  preCars=subset(cnvrs[[1]], CNVR %in% preBins$CNVR)
+
+  # rename CNVR column to accommodate fe.pval function
+  names(preBins)=gsub("CNVR","ix",names(preBins))
+  names(preCars)=gsub("CNVR","ix",names(preCars))
+  
+  # add case status  
+  preCars=merge(preCars, pheno, by="sample_ID", all.x=F, all.y=F)
+
+  # run function through all bins by chr (~30'')
+  
+  # first deletions 
+  for (i in (1:22)) {
+      print(paste("running chr",i," of 22 ..",sep=""))
+      tmpBins=subset(preBins,chr==i)
+	  tmpBins$GT=1
+      tmpCars=subset(preCars,chr==i & GT==1)
+      tmpBins$FEp=mapply(fe.pval, bin=tmpBins$ix, gt=tmpBins$GT)
+      tmpBins=subset(tmpBins,is.na(FEp)==F)
+      if (i==1) {
+          tmpGWbins=tmpBins
+      } else {
+          tmpGWbins=rbind(tmpGWbins,tmpBins)
+      }
+  }
+  tmpGWbinsDel=tmpGWbins
+  
+  # then duplications
+  for (i in (1:22)) {
+      print(paste("running chr",i," of 22 ..",sep=""))
+      tmpBins=subset(preBins,chr==i)
+	  tmpBins$GT=2
+      tmpCars=subset(preCars,chr==i & GT==2)
+      tmpBins$FEp=mapply(fe.pval, bin=tmpBins$ix, gt=tmpBins$GT)
+      tmpBins=subset(tmpBins,is.na(FEp)==F)
+      if (i==1) {
+          tmpGWbins=tmpBins
+      } else {
+          tmpGWbins=rbind(tmpGWbins,tmpBins)
+      }
+  }
+  tmpGWbinsDup=tmpGWbins
+  
+  # combine del/dup results
+  cnvrGWbins=rbind(tmpGWbinsDel,tmpGWbinsDup)
+  
+  # remove empty bins and control the false discovery rate
+  cnvrGWbins=subset(cnvrGWbins,is.na(FEp)==F)
+  cnvrGWbins$FEpFDR=p.adjust(cnvrGWbins$FEp,method="fdr")
+
+  # how many bins ?
+  nrow(cnvrGWbins)
+
+  # was anything significant ?
+  subset(cnvrGWbins,FEpFDR<0.05)
+ 
+  ##################################################################################	
+  ## NB!  The cnvrResGW will inherit the complete (del+dup) count for any CNVR,   ##
+  ## even if only either del or dup is being assessed (as indicated in GT column) ##
+  ##################################################################################	
+
+
+  ### THERE WERE NO ADDITIONAL ASSOCIATION SIGNALS IDENTIFIED IN THIS PART
+  ## DOES THAT TEACH US ANYTHING (NOT REALLY, SINCE THIS IS SIMULATED DATA)
+```
+
+
+## Start over, use genes directly
+
+We can also try using genes direclty in the fist genome wide scan.
+
+```{r}
+  # Now let's look at the genes
+  preBins=subset(binsgenes[[2]], N>=5)
+  preCars=subset(binsgenes[[1]], ix %in% preBins$ix)
+  preCars=merge(preCars,pheno,by="sample_ID", all.x=F, all.y=F)
+
+  # run function through all bins by chr (~1')
+  for (i in (1:22)) {
+      print(paste("running chr",i," of 22 ..",sep=""))
+      tmpBins=subset(preBins,chr==i)
+      tmpCars=subset(preCars,chr==i)
+      tmpBins$FEp=mapply(fe.pval, bin=tmpBins$ix, gt=tmpBins$GT)
+      tmpBins=subset(tmpBins,is.na(FEp)==F)
+      if (i==1) {
+          tmpGWbins=tmpBins
+      } else {
+          tmpGWbins=rbind(tmpGWbins,tmpBins)
+      }
+  }
+  
+  # remove empty bins and control the false discovery rate
+  tmpGWbins=subset(tmpGWbins,is.na(FEp)==F)
+  tmpGWbins$FEpFDR=p.adjust(tmpGWbins$FEp,method="fdr")
+  geneGWbins=tmpGWbins
+
+  # how many bins ?
+  nrow(geneGWbins)
+
+  # was anything significant ?
+  subset(geneGWbins,FEpFDR<0.05)
+ 
+  ### THERE WERE ALSO NO ADDITIONAL ASSOCIATION SIGNALS IDENTIFIED IN THIS PART
+  ## DOES THAT TEACH US ANYTHING (NOT REALLY, SINCE THIS IS SIMULATED DATA)
+```
+
+
+## Why separate deletions and duplications?
+
+Does it make sense to analyse them together? Ideas? Comments? 
+
+```{r}
+	## finally, what if we look at del/dup combined 
+	## (hypothesising they both disrupt the normal function of the overlapped gene)
+	
+	
+    # we need to define a new function that returns the p-value from the FE test
+    fe.pval.comb = function(bin) {
+        tmp.bin=subset(tmpCars,ix==bin)
+	    if (nrow(tmp.bin>0)) {
+	      caseCar=nrow(subset(tmp.bin, case==1))
+	      ctrlCar=nrow(subset(tmp.bin, case==0))
+	      caseNon=length(cases)-caseCar
+	      ctrlNon=length(ctrls)-ctrlCar
+	      fe.tmp=matrix(c(caseCar,caseNon,ctrlCar,ctrlNon),ncol=2)
+	      signif(as.numeric(fisher.test(fe.tmp)$p.value),digits=2)
+	    } else {
+	      NA
+	    }
+    }
+
+  # We start with CNVRs (need to accommodate for non del/dup split of CNVRs)
+  preBins=subset(cnvrs[[2]], n>=5)
+  preCars=subset(cnvrs[[1]], CNVR %in% preBins$CNVR)
+
+  # rename CNVR column to accommodate fe.pval function
+  names(preBins)=gsub("CNVR","ix",names(preBins))
+  names(preCars)=gsub("CNVR","ix",names(preCars))
+  
+  # add case status  
+  preCars=merge(preCars, pheno, by="sample_ID", all.x=F, all.y=F)
+
+  # run function through all bins by chr (~30'')
+  for (i in (1:22)) {
+      print(paste("running chr",i," of 22 ..",sep=""))
+      tmpBins=subset(preBins,chr==i)
+      tmpCars=subset(preCars,chr==i)
+      tmpBins$FEp=lapply(tmpBins$ix, FUN=fe.pval.comb)
+      tmpBins=subset(tmpBins,is.na(FEp)==F)
+      if (i==1) {
+          tmpGWbins=tmpBins
+      } else {
+          tmpGWbins=rbind(tmpGWbins,tmpBins)
+      }
+  }
+  cnvrGWbinsComb=tmpGWbins
+  
+  # remove empty bins and control the false discovery rate
+  cnvrGWbinsComb=subset(cnvrGWbinsComb,is.na(FEp)==F)
+  cnvrGWbinsComb$FEpFDR=p.adjust(cnvrGWbinsComb$FEp,method="fdr")
+
+  # how many bins ?
+  nrow(cnvrGWbinsComb)
+
+  # was anything significant ?
+  subset(cnvrGWbinsComb,FEpFDR<0.05)
+  
+	
+	###### NOPE, NOTHING NEW HERE
+
+  # Finally, the same (del/dup combined) for genes
+  preBins=unique(binsgenes[[2]][,1:4])
+  preCars=merge(binsgenes[[1]],pheno,by="sample_ID", all.x=F, all.y=F)
+
+  # run function through all bins by chr (~1')
+  for (i in (1:22)) {
+      print(paste("running chr",i," of 22 ..",sep=""))
+      tmpBins=subset(preBins,chr==i)
+      tmpCars=subset(preCars,chr==i)
+      tmpBins$FEp=lapply(tmpBins$ix, FUN=fe.pval.comb)
+      tmpBins=subset(tmpBins,is.na(FEp)==F)
+      if (i==1) {
+          tmpGWbins=tmpBins
+      } else {
+          tmpGWbins=rbind(tmpGWbins,tmpBins)
+      }
+  }
+  
+  # remove empty bins and control the false discovery rate
+  tmpGWbins=subset(tmpGWbins,is.na(FEp)==F)
+  tmpGWbins$FEpFDR=p.adjust(tmpGWbins$FEp,method="fdr")
+  geneGWbinsComb=tmpGWbins
+
+  # how many bins ?
+  nrow(geneGWbinsComb)
+
+  # was anything significant ?
+  subset(geneGWbinsComb,FEpFDR<0.05)
+
+  #### NO NOTHING, MAYBE AFTER SOME ADDED SIMULATION :)
+  
 ```
 
 

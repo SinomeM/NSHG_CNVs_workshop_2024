@@ -7,6 +7,9 @@ output:
     theme: cerulea
 ---
 
+**REMEMBER!** If you run the script manually do not execute chunks marked with 
+`\# NOT RUN`.
+
 ```{r setup, include = F}
 # NOT RUN
 
@@ -69,6 +72,9 @@ The table we loaded contains all the minimal information
 to define a set of CNVs, chromosome, start, end, genotype (GT)
 and/or Copy Number (CN), and sample ID.
 
+Deletions have a genotpye of 1 and a copy number of 1 or 0, while duplications
+have a genotype of 2 and a copy number of 3 or more.
+
 ```{r cnvs 1}
 cnvs[1:5]
 ```
@@ -83,11 +89,17 @@ use this format to visualise a sample of our CNV table.
 ```{r}
 # a minimal BED4 requires chr, start, end and ID. Tab as separator and
 # no header
+
+# This is a subset of 100,000 CNVs to make visualisation easier
 fwrite(cnvs[sample(1:.N, 10000), .(chr, start, end, GT)],
-       '../bed_files/cnvs_sample.bed', sep ='\t', col.names = F)
+       '../03_bed_files/cnvs_sample.bed', sep ='\t', col.names = F)
+# these are all CNVs
 fwrite(cnvs[, .(chr, start, end, GT)],
-       '../bed_files/cnvs.bed', sep ='\t', col.names = F)
+       '../03_bed_files/cnvs.bed', sep ='\t', col.names = F)
 ```
+
+Now open IGV and load the first BED file as a track to explore how genome wide
+CNVs looks like.
 
 
 ## Length and number of SNPs
@@ -123,7 +135,7 @@ ggplot(cnvs) + geom_density(aes(x = log(length, 10))) + theme_bw()
 ggplot(cnvs) + geom_histogram(aes(x = log(length, 10))) + theme_bw()
 ```
 
-Log10 is better and we don't need to exclude any CNV.
+Log10 looks better and we don't need to exclude any CNV.
 
 
 ## Differences between deletions and duplications?
@@ -181,9 +193,10 @@ Some hints / suggestions:
 
 ```{r}
 pheno <- fread('pheno.txt')
+pheno[1:5]
 ```
 
-If your strategy works you will find a signal somewhere in chromosome
+If your strategy works you will find a signal somewhere in chromosomes
 5, 8, 13 and 21.
 
 Good luck! ;)
