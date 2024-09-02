@@ -57,18 +57,17 @@ cnvs[GT == 2 & chr == 5 & start <= 60628085 & end >= 60841999, .N]
 #location: chr21:33032006-33041244 (+)
 cnvs[GT == 1 & chr == 21 & start <= 33032006 & end >= 33041244, .N]
 
+# name: 13q_3_127_N510
+# location: chr13:47352113-47434319
+cnvs_r[CNVR == '13q_3_127', .N]
+
 # bins 100
 #name: 13968
 #location: chr8:3900001-4000001
 cnvs[GT == 2 & chr == 8 & start <= 3900001 & end >= 4000001, .N]
 
-# name: 13q_3_127_N510
-# location: chr13:47352113-47434319
-cnvs_r[CNVR == '13q_3_127', .N]
-
 
 # Simulation
-
 samples <- fread('../UKB_GW_CNVs/qc_filtered.txt')[, .(sample_ID)]
 samples[, gender := sample(1:2, .N, replace = T)]
 samples
@@ -83,16 +82,21 @@ samples[sample_ID %in% cnvs[GT == 1 & chr == 21 & start <= 33032006 &
 samples[sample_ID %in% cnvs_r[CNVR == '13q_3_127', sample_ID], cnv3 := 1][is.na(cnv3), cnv3 := 0]
 
 # CNV4, relatively common, low risk
-samples[sample_ID %in% cnvs[GT == 1 & chr == 8 & start <= 3900001 &
+samples[sample_ID %in% cnvs[GT == 2 & chr == 8 & start <= 3900001 &
                             end >= 4000001, sample_ID], cnv4 := 1][is.na(cnv4), cnv4 := 0]
+
+samples[, .N , by = (cnv1)]
+samples[, .N , by = (cnv2)]
+samples[, .N , by = (cnv3)]
+samples[, .N , by = (cnv4)]
 
 prev <- 0.01
 for (i in 1:nrow(samples)) {
   a <- samples[i]
-  if (a$cnv1 == 1) cs <- rbinom(1,1,prev*7)
-  else if (a$cnv2 == 1) cs <- rbinom(1,1,prev*6)
-  else if (a$cnv3 == 1) cs <- rbinom(1,1,prev*4)
-  else if (a$cnv4 == 1) cs <- rbinom(1,1,prev*2.5)
+  if (a$cnv1 == 1) cs <- rbinom(1,1,prev*9.5)
+  else if (a$cnv2 == 1) cs <- rbinom(1,1,prev*6.5)
+  else if (a$cnv3 == 1) cs <- rbinom(1,1,prev*4.5)
+  else if (a$cnv4 == 1) cs <- rbinom(1,1,prev*2)
   else cs <- rbinom(1,1,prev)
   samples[i, case := cs]
 }
