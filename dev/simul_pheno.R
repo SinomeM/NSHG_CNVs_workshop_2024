@@ -60,6 +60,7 @@ cnvs[GT == 1 & chr == 21 & start <= 33032006 & end >= 33041244, .N]
 # name: 13q_3_127_N510
 # location: chr13:47352113-47434319
 cnvs_r[CNVR == '13q_3_127', .N]
+cnvs_r[CNVR == '13q_3_127', .N, by = GT]
 
 # bins 100
 #name: 13968
@@ -85,21 +86,29 @@ samples[sample_ID %in% cnvs_r[CNVR == '13q_3_127', sample_ID], cnv3 := 1][is.na(
 samples[sample_ID %in% cnvs[GT == 2 & chr == 8 & start <= 3900001 &
                             end >= 4000001, sample_ID], cnv4 := 1][is.na(cnv4), cnv4 := 0]
 
-samples[, .N , by = (cnv1)]
-samples[, .N , by = (cnv2)]
-samples[, .N , by = (cnv3)]
-samples[, .N , by = (cnv4)]
 
 prev <- 0.01
-for (i in 1:nrow(samples)) {
-  a <- samples[i]
-  if (a$cnv1 == 1) cs <- rbinom(1,1,prev*9.5)
+b <- samples[cnv1 == 1 | cnv2 == 1 | cnv3 == 1 | cnv4 == 1, ]
+c <- fsetdiff(samples, b)
+for (i in 1:nrow(b)) {
+  a <- b[i]
+  if (a$cnv1 == 1) cs <- rbinom(1,1,prev*9.3)
   else if (a$cnv2 == 1) cs <- rbinom(1,1,prev*6.5)
-  else if (a$cnv3 == 1) cs <- rbinom(1,1,prev*4.5)
-  else if (a$cnv4 == 1) cs <- rbinom(1,1,prev*2)
-  else cs <- rbinom(1,1,prev)
-  samples[i, case := cs]
+  else if (a$cnv3 == 1) cs <- rbinom(1,1,prev*3.8)
+  else if (a$cnv4 == 1) cs <- rbinom(1,1,prev*1.8)
+  b[i, case := cs]
 }
+
+simulateCarriers <-  function(x, prev) rbinom(1,1,prev)
+c$case=as.numeric(lapply(c$sample_ID, FUN = simulateCarriers, prev = 0.01))
+
+samples <- rbind (b,c)
+
+
+samples[, .N , by = c('cnv1', 'case')]
+samples[, .N , by = c('cnv2', 'case')]
+samples[, .N , by = c('cnv3', 'case')]
+samples[, .N , by = c('cnv4', 'case')]
 
 fwrite(samples, './dev/pheno.txt')
 fwrite(samples[, .(sample_ID, gender, case)], './01_homework/pheno.txt')

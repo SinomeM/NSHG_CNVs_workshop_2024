@@ -8,7 +8,7 @@ output:
 ---
 
 **REMEMBER!** If you run the script manually do not execute chunks marked with 
-`\# NOT RUN`.
+`# NOT RUN`.
 
 ```{r setup, include = F}
 # NOT RUN
