@@ -91,7 +91,7 @@ use this format to visualise a sample of our CNV table.
 # no header
 
 # This is a subset of 100,000 CNVs to make visualisation easier
-fwrite(cnvs[sample(1:.N, 10000), .(chr, start, end, GT)],
+fwrite(cnvs[sample(1:.N, 100000), .(chr, start, end, GT)],
        '../03_bed_files/cnvs_sample.bed', sep ='\t', col.names = F)
 # these are all CNVs
 fwrite(cnvs[, .(chr, start, end, GT)],

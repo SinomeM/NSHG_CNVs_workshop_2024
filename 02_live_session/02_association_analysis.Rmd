@@ -105,9 +105,7 @@ setwd('~/Documents/NSHG_CNVs_workshop_2024/02_live_session//')
 # if you want to run it yourself you will need to install it.
 
 # load the package, it will require additional installations
-setwd('../../CNValidatron_fl')
-devtools::load_all()
-setwd('../NSHG_CNVs_workshop_2024/02_live_session')
+library(CNValidatron)
 
 # alternatively, just load the functions we use
 # way less safe and far from optimal but should work
@@ -158,8 +156,6 @@ These can be regular windows, as in this example, or any other set of segments.
 
 ```{r bin cnvs, eval = F}
 # NOT RUN
-
-source('~/Documents/CNValidatron_fl/R/binned_cnvs.R')
 dt <- binned_cnvs(cnvs, format = 'count',
                   bins = CNValidatron:::binned_genome(bin_size = 250000))
 saveRDS(dt, '../dev/binned_cnvs_250kbp.rds')
@@ -173,6 +169,7 @@ Load pre-computed object.
 ```{r}
 bins250kb <- readRDS( '../dev/binned_cnvs_250kbp.rds')
 bins100kb <- readRDS( '../dev/binned_cnvs_100kbp.rds')
+bins250kb
 ```
 
 Create BED files of the bins to check visually how they compare with CNVs, CNVRs
@@ -183,12 +180,12 @@ etc in IGV.
 
 dt <- CNValidatron:::binned_genome(bin_size = 250000)[]
 dt[, end := end + 2]
-fwrite(dt[, .(chr, start, end, ix)], 'bed_files/bins_250.bed',
+fwrite(dt[, .(chr, start, end, ix)], '../03_bed_files/bins_250.bed',
        sep ='\t', col.names = F, scipen = 1000)
 
 dt <- CNValidatron:::binned_genome(bin_size = 100000)[]
 dt[, end := end + 2]
-fwrite(dt[, .(chr, start, end, ix)], 'bed_files/bins_100.bed',
+fwrite(dt[, .(chr, start, end, ix)], '../03_bed_files/bins_100.bed',
        sep ='\t', col.names = F, scipen = 1000)
 ```
 
@@ -204,7 +201,6 @@ detection algorithm Leiden. It can be very memory hungry, so it been pre run.
 
 ```{r compute CNVRs, eval = F}
 # NOT RUN
-
 dt <- cnvrs_iou(cnvs, QCtreeCNV::hg19_chr_arms, min_iou = 0.50,
                 max_force_merge_rounds = 5, force_merge_min_overlap = 0.75)
 
@@ -224,14 +220,13 @@ Create BED files for IGV.
 
 ```{r cnvrs BED, eval = F}
 # NOT RUN
-
 cnvrs[, name := paste0(CNVR, '_N', n)]
 
 fwrite(cnvs_r[, .(chr, start, end, CNVR)],
-       'bed_files/cnvs_with_cnvr.bed', sep ='\t', col.names = F)
+       '../03_bed_files/cnvs_with_cnvr.bed', sep ='\t', col.names = F)
 
 fwrite(cnvrs[n >= 10, .(chr, start, end, name)],
-       'bed_files/cnvrs_min10_freq.bed', sep ='\t', col.names = F)
+       '../03_bed_files/cnvrs_min10_freq.bed', sep ='\t', col.names = F)
 ```
 
 
@@ -481,7 +476,7 @@ subset(GWbinsAll,FEpFDR<0.05)
 ## Pause and ponder, take a look in IGV?
 
 1. If the signal is carried by a variant smaller than the window, using smaller
-   windows will improver the detection. 
+   windows will improve the detection. 
 2. In general, regular windows are very good for quick scan, but they lack
    specificity and granularity
 3. In contrast, if the signal truly is is a large region, using small windows might
